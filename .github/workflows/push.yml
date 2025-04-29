@@ -1,38 +1,33 @@
-name: Build, Push & Deploy
+name: Nginx Static Deploy
 
 on:
   push:
-    branches:
-      - main  # main branch'e push yapıldığında tetiklenir
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Kodları al
-      uses: actions/checkout@v3  # Repo'nun kodlarını al
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-    - name: Docker Hub'a login ol
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin  # Docker Hub'a login
+    - name: Login to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Docker image build et
-      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/ayseactions:latest .  # Docker imajını build et
-
-    - name: Docker image push et
-      run: docker push ${{ secrets.DOCKER_USERNAME }}/ayseactions:latest  # Docker imajını Docker Hub'a push et
-
-    - name: Node.js'i kur
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16'  # İstediğiniz Node.js sürümünü burada belirtebilirsiniz
-
-    - name: Railway CLI'yi kur
-      run: npm install -g railway  # Railway CLI'yi npm ile kur
-
-    - name: Railway'e deploy et
+    - name: Build and Push Docker image
       run: |
-        railway link  # Railway'e bağlantı sağla
-        railway run "docker run -d -p 80:3000 ${{ secrets.DOCKER_USERNAME }}/ayseactions:latest"  # Docker Hub'dan imajı al ve çalıştır
-      env:
-        RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}  # Railway API key'ini environment variable olarak ekle
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/my-nginx-site:latest .
+        docker push ${{ secrets.DOCKER_USERNAME }}/my-nginx-site:latest
+
+    - name: Deploy to VPS via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/my-nginx-site:latest
+          docker stop mynginx || true
+          docker rm mynginx || true
+          docker run -d --name mynginx -p 80:80 ${{ secrets.DOCKER_USERNAME }}/my-nginx-site:latest
