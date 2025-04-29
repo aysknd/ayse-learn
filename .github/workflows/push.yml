@@ -22,11 +22,13 @@ jobs:
     - name: Docker image push et
       run: docker push ${{ secrets.DOCKER_USERNAME }}/ayseactions:latest  # Docker imajını Docker Hub'a push et
 
+    - name: Node.js'i kur
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'  # İstediğiniz Node.js sürümünü burada belirtebilirsiniz
+
     - name: Railway CLI'yi kur
-      run: |
-        curl -fsSL https://get.railway.app/cli.sh | sh  # Railway CLI'yi kur
-        sudo mv railway /usr/local/bin  # railway komutunu global olarak erişilebilir yapmak için
-      shell: bash
+      run: npm install -g railway  # Railway CLI'yi npm ile kur
 
     - name: Railway'e deploy et
       run: |
