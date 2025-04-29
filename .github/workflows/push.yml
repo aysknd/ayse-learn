@@ -22,15 +22,15 @@ jobs:
     - name: Docker image push et
       run: docker push ${{ secrets.DOCKER_USERNAME }}/ayseactions:latest  # Docker imajını Docker Hub'a push et
 
+    - name: Railway CLI'yi kur
+      run: |
+        curl -fsSL https://get.railway.app/cli.sh | sh  # Railway CLI'yi kur
+        sudo mv railway /usr/local/bin  # railway komutunu global olarak erişilebilir yapmak için
+      shell: bash
+
     - name: Railway'e deploy et
       run: |
-        # Railway CLI'yi kur
-        curl -fsSL https://railway.app/deploy | sh  
-        
-        # Railway'e bağlantı sağla
-        railway link
-
-        # Docker Hub'dan imajı al ve çalıştır
-        railway run "docker run -d -p 80:3000 ${{ secrets.DOCKER_USERNAME }}/ayseactions:latest"
+        railway link  # Railway'e bağlantı sağla
+        railway run "docker run -d -p 80:3000 ${{ secrets.DOCKER_USERNAME }}/ayseactions:latest"  # Docker Hub'dan imajı al ve çalıştır
       env:
         RAILWAY_API_KEY: ${{ secrets.RAILWAY_API_KEY }}  # Railway API key'ini environment variable olarak ekle
